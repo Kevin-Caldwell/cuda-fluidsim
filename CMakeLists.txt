@@ -6,12 +6,13 @@ project(cuda_fluidsim LANGUAGES CXX CUDA)
 file(GLOB srcs "${PROJECT_SOURCE_DIR}/src/*")
 
 add_executable(cuda_fluidsim ${srcs} main.cu)
+add_executable(ppm_handler ${srcs} ppm_main.cpp)
 
 set_property(TARGET cuda_fluidsim 
              PROPERTY CUDA_SEPARABLE_COMPILATION ON)
 
 include_directories(
-  "include/Common",
+  "include/Common"
   "${PROJECT_SOURCE_DIR}/include/"
   )
 

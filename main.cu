@@ -6,24 +6,68 @@
 #include <thread>
 #include <unistd.h>
 #include <random>
+// #include <limits.h>
 
 #include "config_reader.hpp"
 #include "fsim_manager.cuh"
-#include "data_server.hpp"
 #include "backups.hpp"
+#include "ppm_handler.hpp"
 
 char wbuf[40];
 
 #define DEBUG
 
-int main(void)
+float max_arr(float *arr, int len)
 {
+    float max = -1000000000;
 
+    for (int i = 0; i < len; i++)
+    {
+        if (arr[i] > max)
+        {
+            max = arr[i];
+        }
+    }
+
+    return max;
+}
+
+float min_arr(float *arr, int len)
+{
+    float min = 1000000000;
+
+    for (int i = 0; i < len; i++)
+    {
+        if (arr[i] < min)
+        {
+            min = arr[i];
+        }
+    }
+
+    return min;
+}
+
+void fl_to_char_arr(
+    float *fl_arr, char *ch_arr, int len, float scaling, float offset)
+{
+    for (int i = 0; i < len; i++)
+    {
+        ch_arr[i] = (char)((int)(fl_arr[i] * scaling + offset));
+    }
+}
+
+int check_cuda_dev()
+{
     int nDevices;
 
     cudaGetDeviceCount(&nDevices);
     printf("Devices Found: %d\n", nDevices);
-    
+
+    if (!nDevices)
+    {
+        return 1;
+    }
+
     for (int i = 0; i < nDevices; i++)
     {
         cudaDeviceProp prop;
@@ -36,6 +80,73 @@ int main(void)
                prop.memoryBusWidth);
         printf("  Peak Memory Bandwidth (GB/s): %f\n\n",
                2.0 * prop.memoryClockRate * (prop.memoryBusWidth / 8) / 1.0e6);
+    }
+
+    return 0;
+}
+
+void velocity_field_init(
+    int elem_count, int buffer_size,
+    int dim_x, int dim_y,
+    float *h_buffer,
+    SimParams *params,
+    float *d_u, float *d_v, float *d_pressure)
+{
+    for (int i = 0; i < elem_count; i++)
+    {
+        h_buffer[i] = params->offset_vel_x;
+    }
+
+    h_buffer[elem(dim_x / 2, dim_y/2, dim_x)] = 0.1;
+
+    // for (int i = dim_y / 3; i < 2 * dim_y / 3; i++)
+    // {
+    //     h_buffer[elem(dim_x / 2, i, dim_x)] = 0.1;
+    // }
+
+    // fill_random(h_buffer, elem_count);
+    // h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] = 0.01;
+    cudaMemcpy(d_u, h_buffer, buffer_size, cudaMemcpyHostToDevice);
+
+    for (int i = 0; i < elem_count; i++)
+    {
+        h_buffer[i] = params->offset_vel_y;
+    }
+
+    cudaMemcpy(d_v, h_buffer, buffer_size, cudaMemcpyHostToDevice);
+
+    for (int i = 0; i < elem_count; i++)
+    {
+        h_buffer[i] = 0.0;
+    }
+
+    cudaMemcpy(d_pressure, h_buffer, buffer_size, cudaMemcpyHostToDevice);
+}
+
+char *h_chbuffer = NULL;
+
+void render_scalar_field(
+    ppm_handler img_creator,
+    int index, const char *annotation,
+    int elem_count, float *d_data, float *h_buffer)
+{
+
+    char filename_buf[100];
+
+    cudaMemcpy(h_buffer, d_data, elem_count * sizeof(float), cudaMemcpyDeviceToHost);
+    float max = max_arr(h_buffer, elem_count);
+    float min = min_arr(h_buffer, elem_count);
+    printf("(%03f, %03f)", max, min);
+    fl_to_char_arr(h_buffer, h_chbuffer, elem_count, (max - min) / 255, min);
+    snprintf(filename_buf, 100, "temp/%s_%03d.ppm", annotation, index);
+    img_creator.write_ppm(filename_buf, h_chbuffer);
+}
+
+int main(void)
+{
+    if (check_cuda_dev())
+    {
+        return -1;
     }
 
     SimParams params;
@@ -71,6 +182,7 @@ int main(void)
 
     // Allocate Temporary RAM Buffer to hold data to set/use Device Memory
     h_buffer = (float *)malloc(buffer_size);
+    h_chbuffer = (char *)malloc(elem_count * sizeof(char));
 
     dim3 blocks = {(unsigned)params.dim_x, (unsigned)params.dim_y};
 
@@ -90,69 +202,26 @@ int main(void)
 
     setup_backup();
 
-    // Initialize U Field
-    for (int i = 0; i < elem_count; i++)
-    {
-        h_buffer[i] = params.offset_vel_x;
-    }
+    velocity_field_init(elem_count, buffer_size,
+                        dim_x, dim_y, h_buffer, &params, d_u, d_v, d_pressure);
 
-    for (int i = dim_y / 3; i < 2 * dim_y / 3; i++)
-    {
-        h_buffer[elem(dim_x / 2, i, dim_x)] = 1;
-    }
-
-    // fill_random(h_buffer, elem_count);
-    // h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] = 0.01;
-    cudaMemcpy(d_u, h_buffer, buffer_size, cudaMemcpyHostToDevice);
-
-    for (int i = 0; i < elem_count; i++)
-    {
-        h_buffer[i] = params.offset_vel_y;
-    }
-
-    // fill_random(h_buffer, elem_count);
-    // h_buffer[elem(dim_x / 2, 2 * dim_y / 3, dim_x)] = -0.01;
-    cudaMemcpy(d_v, h_buffer, buffer_size, cudaMemcpyHostToDevice);
-
-    for (int i = 0; i < elem_count; i++)
-    {
-        h_buffer[i] = 0.0;
-    }
-
-    // h_buffer[elem(5, 5, 10)] = 10.0;
-
-    cudaMemcpy(d_pressure, h_buffer, buffer_size, cudaMemcpyHostToDevice);
-
-    system("rm -r temp");
     system("mkdir temp");
-    system("./../../../capture-fields.sh &");
-    data_server *ds_u = new data_server("u", dim_x, dim_y);
-    data_server *ds_v = new data_server("v", dim_x, dim_y);
-    data_server *ds_w = new data_server("w", dim_x, dim_y);
-    data_server *ds_p = new data_server("pressure", dim_x, dim_y);
 
     bool save_arena = true;
     unsigned int iterations = 0;
 
+    ppm_handler img_creater = ppm_handler(dim_x, dim_y, 0);
+
     while (params.t < tf)
     {
-        save_arena = iterations % 4 == 0;
+        // save_arena = iterations % 1 == 0;
 
         // Copy U, V, P from GPU to Memory and save to csv for Debugging
         if (save_arena)
         {
-            cudaMemcpy(h_buffer, d_u, buffer_size, cudaMemcpyDeviceToHost);
-            ds_u->send_frame(h_buffer);
-            // fsim_csv_append(h_buffer, &params.dim_x, &params.dim_y, u_csv_fp);
-            cudaMemcpy(h_buffer, d_v, buffer_size, cudaMemcpyDeviceToHost);
-            ds_v->send_frame(h_buffer);
-            // fsim_csv_append(h_buffer, &params.dim_x, &params.dim_y, v_csv_fp);
-            cudaMemcpy(h_buffer, d_pressure, buffer_size, cudaMemcpyDeviceToHost);
-            ds_p->send_frame(h_buffer);
-
-            fsim_vorticity_map(d_data, blocks);
-            cudaMemcpy(h_buffer, d_temp0, buffer_size, cudaMemcpyDeviceToHost);
-            ds_w->send_frame(h_buffer);
+            render_scalar_field(img_creater, iterations, "u", elem_count, d_u, h_buffer);
+            render_scalar_field(img_creater, iterations, "v", elem_count, d_v, h_buffer);
+            render_scalar_field(img_creater, iterations, "pressure", elem_count, d_pressure, h_buffer);
         }
         // fsim_csv_append(h_buffer, &params.dim_x, &params.dim_y, pressure_fp);
 
@@ -185,11 +254,6 @@ int main(void)
     cudaFree(d_v);
     cudaFree(d_temp0);
     cudaFree(d_temp1);
-
-    delete ds_u;
-    delete ds_v;
-    delete ds_w;
-    delete ds_p;
 
     system("./../../../vidgen.sh");
     system("rm -r temp");

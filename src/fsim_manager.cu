@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 
+
 void __host__ fsim_smooth_pressure(SimData *d_s, dim3 blocks)
 {
     thread_pressure_smoothing<<<blocks, 1>>>(d_s);
