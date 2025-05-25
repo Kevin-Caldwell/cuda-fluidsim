@@ -12,49 +12,12 @@
 #include "fsim_manager.cuh"
 #include "backups.hpp"
 #include "ppm_handler.hpp"
+#include "array_utils.hpp"
+
 
 char wbuf[40];
 
 #define DEBUG
-
-float max_arr(float *arr, int len)
-{
-    float max = -1000000000;
-
-    for (int i = 0; i < len; i++)
-    {
-        if (arr[i] > max)
-        {
-            max = arr[i];
-        }
-    }
-
-    return max;
-}
-
-float min_arr(float *arr, int len)
-{
-    float min = 1000000000;
-
-    for (int i = 0; i < len; i++)
-    {
-        if (arr[i] < min)
-        {
-            min = arr[i];
-        }
-    }
-
-    return min;
-}
-
-void fl_to_char_arr(
-    float *fl_arr, char *ch_arr, int len, float scaling, float offset)
-{
-    for (int i = 0; i < len; i++)
-    {
-        ch_arr[i] = (char)((int)(fl_arr[i] * scaling + offset));
-    }
-}
 
 int check_cuda_dev()
 {
@@ -97,7 +60,7 @@ void velocity_field_init(
         h_buffer[i] = params->offset_vel_x;
     }
 
-    h_buffer[elem(dim_x / 2, dim_y/2, dim_x)] = 0.1;
+    h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] = 0.5;
 
     // for (int i = dim_y / 3; i < 2 * dim_y / 3; i++)
     // {
@@ -105,7 +68,7 @@ void velocity_field_init(
     // }
 
     // fill_random(h_buffer, elem_count);
-    // h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] = 0.01;
+    
     cudaMemcpy(d_u, h_buffer, buffer_size, cudaMemcpyHostToDevice);
 
     for (int i = 0; i < elem_count; i++)
@@ -136,10 +99,21 @@ void render_scalar_field(
     cudaMemcpy(h_buffer, d_data, elem_count * sizeof(float), cudaMemcpyDeviceToHost);
     float max = max_arr(h_buffer, elem_count);
     float min = min_arr(h_buffer, elem_count);
-    printf("(%03f, %03f)", max, min);
-    fl_to_char_arr(h_buffer, h_chbuffer, elem_count, (max - min) / 255, min);
+    // printf("(%03f, %03f)", max, min);
+    fl_to_char_arr(h_buffer, h_chbuffer, elem_count, 255 / (max - min), min);
     snprintf(filename_buf, 100, "temp/%s_%03d.ppm", annotation, index);
     img_creator.write_ppm(filename_buf, h_chbuffer);
+}
+
+void print_field(float* arr, int size_x, int size_y){
+    for(int i = 0; i < size_y; i++){
+        printf("[%f ", arr[size_x * i]);
+        for(int j = 1; j < size_x; j++){
+            printf(", %f", arr[size_x * i + j]);
+        }
+        printf("]\n");
+    }
+    printf("\n");
 }
 
 int main(void)
@@ -222,9 +196,9 @@ int main(void)
             render_scalar_field(img_creater, iterations, "u", elem_count, d_u, h_buffer);
             render_scalar_field(img_creater, iterations, "v", elem_count, d_v, h_buffer);
             render_scalar_field(img_creater, iterations, "pressure", elem_count, d_pressure, h_buffer);
+            // print_field(h_buffer, dim_x, dim_y);
         }
-        // fsim_csv_append(h_buffer, &params.dim_x, &params.dim_y, pressure_fp);
-
+        
         // Iteratively Smooth Pressure
         for (int i = 0; i < params.smoothing; i++)
         {
