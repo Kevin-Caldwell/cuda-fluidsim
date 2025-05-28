@@ -1,6 +1,6 @@
 #include "array_utils.hpp"
 
-float max_arr(float *arr, int len)
+float utils::array::max_arr(float *arr, int len)
 {
     float max = arr[0];
 
@@ -15,7 +15,7 @@ float max_arr(float *arr, int len)
     return max;
 }
 
-float min_arr(float *arr, int len)
+float utils::array::min_arr(float *arr, int len)
 {
     float min = arr[0];
 
@@ -30,7 +30,7 @@ float min_arr(float *arr, int len)
     return min;
 }
 
-void fl_to_char_arr(
+void utils::array::fl_to_char_arr(
     float *fl_arr, char *ch_arr, int len, float scaling, float offset)
 {
     for (int i = 0; i < len; i++)

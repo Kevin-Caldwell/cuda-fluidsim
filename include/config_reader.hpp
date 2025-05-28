@@ -6,6 +6,12 @@
 #include "errors.hpp"
 #include "sim_params.hpp"
 
+namespace utils {
+namespace config_reader {
+
 ret_t parse_fsim_config(const char* filename, sim_params_t *params);
+
+}
+}
 
 #endif /* CONFIG_READER_H */

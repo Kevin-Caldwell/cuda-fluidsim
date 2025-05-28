@@ -97,10 +97,10 @@ void render_scalar_field(
     char filename_buf[100];
 
     cudaMemcpy(h_buffer, d_data, elem_count * sizeof(float), cudaMemcpyDeviceToHost);
-    float max = max_arr(h_buffer, elem_count);
-    float min = min_arr(h_buffer, elem_count);
+    float max = utils::array::max_arr(h_buffer, elem_count);
+    float min = utils::array::min_arr(h_buffer, elem_count);
     // printf("(%03f, %03f)", max, min);
-    fl_to_char_arr(h_buffer, h_chbuffer, elem_count, 255 / (max - min), min);
+    utils::array::fl_to_char_arr(h_buffer, h_chbuffer, elem_count, 255 / (max - min), min);
     snprintf(filename_buf, 100, "temp/%s_%03d.ppm", annotation, index);
     img_creator.write_ppm(filename_buf, h_chbuffer);
 }
@@ -132,7 +132,7 @@ int main(void)
     float *d_temp0 = NULL, *d_temp1 = NULL;
     float *h_buffer = NULL;
 
-    parse_fsim_config("fsim.config", &params);
+    utils::config_reader::parse_fsim_config("fsim.config", &params);
 
     const int dim_x = params.dim_x, dim_y = params.dim_y;
     const float tf = params.tf;
@@ -174,7 +174,7 @@ int main(void)
 
     printf("Successfully Allocated Memory...\n");
 
-    setup_backup();
+    utils::backup::setup_backup();
 
     velocity_field_init(elem_count, buffer_size,
                         dim_x, dim_y, h_buffer, &params, d_u, d_v, d_pressure);
@@ -186,6 +186,7 @@ int main(void)
 
     ppm_handler img_creater = ppm_handler(dim_x, dim_y, 0);
 
+    for(; params.t < tf; params.t += params.dt)
     while (params.t < tf)
     {
         // save_arena = iterations % 1 == 0;
@@ -196,24 +197,22 @@ int main(void)
             render_scalar_field(img_creater, iterations, "u", elem_count, d_u, h_buffer);
             render_scalar_field(img_creater, iterations, "v", elem_count, d_v, h_buffer);
             render_scalar_field(img_creater, iterations, "pressure", elem_count, d_pressure, h_buffer);
-            // print_field(h_buffer, dim_x, dim_y);
         }
         
         // Iteratively Smooth Pressure
         for (int i = 0; i < params.smoothing; i++)
         {
-            fsim_smooth_pressure(d_data, blocks);
+            fluidsim::fsim_smooth_pressure(d_data, blocks);
             cudaMemcpy(d_pressure, d_temp0, buffer_size, cudaMemcpyDeviceToDevice);
         }
 
         // Update Velocity Vector Field
-        fsim_update_u(d_data, blocks);
-        fsim_update_v(d_data, blocks);
+        fluidsim::fsim_update_u(d_data, blocks);
+        fluidsim::fsim_update_v(d_data, blocks);
 
         cudaMemcpy(d_u, d_temp0, buffer_size, cudaMemcpyDeviceToDevice);
         cudaMemcpy(d_v, d_temp1, buffer_size, cudaMemcpyDeviceToDevice);
 
-        params.t += params.dt;
         printf("\r%f/%f", params.t, tf);
         fflush(0);
         iterations++;
@@ -232,6 +231,6 @@ int main(void)
     system("./../../../vidgen.sh");
     system("rm -r temp");
 
-    exit_backup(&params);
+    utils::backup::exit_backup(&params);
     return 0;
 }

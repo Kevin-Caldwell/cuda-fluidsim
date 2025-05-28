@@ -5,6 +5,7 @@
 
 #define MULTIPLIER 1
 
+
 __global__ void thread_pressure_smoothing(SimData *data)
 {
     int i = blockIdx.x;
