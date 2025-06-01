@@ -1,7 +1,7 @@
 #ifndef PPM_HANDLER_H
 #define PPM_HANDLER_H
 
-#include "errors.hpp"
+#include "errors.h"
 
 #define MAX_PIXEL_VAL 255
 

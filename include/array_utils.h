@@ -1,5 +1,4 @@
-#ifndef ARRAY_UTILS_H
-#define ARRAY_UTILS_H
+#pragma once
 
 namespace utils {
 namespace array {
@@ -14,5 +13,4 @@ void fl_to_char_arr(
 );
 }
 }
-#endif /* ARRAY_UTILS_H */
 

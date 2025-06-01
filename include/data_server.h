@@ -1,5 +1,4 @@
-#ifndef DATA_SERVER_H
-#define DATA_SERVER_H
+#pragma once
 
 #include <sys/socket.h>
 #include <iostream>
@@ -45,6 +44,3 @@ public:
     int send_frame(float* src);
 };
 
-
-
-#endif /* DATA_SERVER_H */

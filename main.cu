@@ -8,45 +8,17 @@
 #include <random>
 // #include <limits.h>
 
-#include "config_reader.hpp"
+#include "config_reader.h"
 #include "fsim_manager.cuh"
-#include "backups.hpp"
-#include "ppm_handler.hpp"
-#include "array_utils.hpp"
-
+#include "backups.h"
+#include "ppm_handler.h"
+#include "array_utils.h"
+#include "device_utils.h"
+#include "log.h"
 
 char wbuf[40];
 
 #define DEBUG
-
-int check_cuda_dev()
-{
-    int nDevices;
-
-    cudaGetDeviceCount(&nDevices);
-    printf("Devices Found: %d\n", nDevices);
-
-    if (!nDevices)
-    {
-        return 1;
-    }
-
-    for (int i = 0; i < nDevices; i++)
-    {
-        cudaDeviceProp prop;
-        cudaGetDeviceProperties(&prop, i);
-        printf("Device Number: %d\n", i);
-        printf("  Device name: %s\n", prop.name);
-        printf("  Memory Clock Rate (KHz): %d\n",
-               prop.memoryClockRate);
-        printf("  Memory Bus Width (bits): %d\n",
-               prop.memoryBusWidth);
-        printf("  Peak Memory Bandwidth (GB/s): %f\n\n",
-               2.0 * prop.memoryClockRate * (prop.memoryBusWidth / 8) / 1.0e6);
-    }
-
-    return 0;
-}
 
 void velocity_field_init(
     int elem_count, int buffer_size,
@@ -118,10 +90,13 @@ void print_field(float* arr, int size_x, int size_y){
 
 int main(void)
 {
-    if (check_cuda_dev())
+    if (gpu::check_cuda_dev())
     {
         return -1;
     }
+
+    long int time;
+    utils::log::tick();
 
     SimParams params;
     SimParams *d_params = NULL;
@@ -186,17 +161,24 @@ int main(void)
 
     ppm_handler img_creater = ppm_handler(dim_x, dim_y, 0);
 
-    for(; params.t < tf; params.t += params.dt)
-    while (params.t < tf)
-    {
+    time = utils::log::tock();
+    printf("Setup Time: %ld ms ", time/1000000);
+    
+    for(; params.t < tf; params.t += params.dt) {
+        write(STDOUT_FILENO, "\r", 1);
+        printf("%08f/%08f\t", params.t, tf, utils::log::tock() / 1000000);
         // save_arena = iterations % 1 == 0;
-
+        
         // Copy U, V, P from GPU to Memory and save to csv for Debugging
         if (save_arena)
         {
+            printf("Render Time: %d\t", utils::log::tock() / 1000000);
             render_scalar_field(img_creater, iterations, "u", elem_count, d_u, h_buffer);
+            printf("%d\t", utils::log::tock() / 1000000);
             render_scalar_field(img_creater, iterations, "v", elem_count, d_v, h_buffer);
+            printf("%d\t", utils::log::tock() / 1000000);
             render_scalar_field(img_creater, iterations, "pressure", elem_count, d_pressure, h_buffer);
+            printf("%d\t", utils::log::tock() / 1000000);
         }
         
         // Iteratively Smooth Pressure
@@ -205,15 +187,17 @@ int main(void)
             fluidsim::fsim_smooth_pressure(d_data, blocks);
             cudaMemcpy(d_pressure, d_temp0, buffer_size, cudaMemcpyDeviceToDevice);
         }
-
+        printf("%d\t", utils::log::tock() / 1000000);
+        
         // Update Velocity Vector Field
         fluidsim::fsim_update_u(d_data, blocks);
         fluidsim::fsim_update_v(d_data, blocks);
-
+        printf("%d\t", utils::log::tock() / 1000000);
+        
         cudaMemcpy(d_u, d_temp0, buffer_size, cudaMemcpyDeviceToDevice);
         cudaMemcpy(d_v, d_temp1, buffer_size, cudaMemcpyDeviceToDevice);
+        printf("%d\t", utils::log::tock() / 1000000);
 
-        printf("\r%f/%f", params.t, tf);
         fflush(0);
         iterations++;
     }

@@ -3,27 +3,27 @@
 #include <stdio.h>
 
 
-void __host__ fsim_smooth_pressure(SimData *d_s, dim3 blocks)
+void __host__ fluidsim::fsim_smooth_pressure(SimData *d_s, dim3 blocks)
 {
     thread_pressure_smoothing<<<blocks, 1>>>(d_s);
 }
 
-void __host__ fsim_update_u(SimData *d_s, dim3 blocks)
+void __host__ fluidsim::fsim_update_u(SimData *d_s, dim3 blocks)
 {
     thread_update_u<<<blocks, 1>>>(d_s);
 }
 
-void __host__ fsim_update_v(SimData *d_s, dim3 blocks)
+void __host__ fluidsim::fsim_update_v(SimData *d_s, dim3 blocks)
 {
     thread_update_v<<<blocks, 1>>>(d_s);
 }
 
-void __host__ fsim_vorticity_map(SimData *d_s, dim3 blocks)
+void __host__ fluidsim::fsim_vorticity_map(SimData *d_s, dim3 blocks)
 {
     thread_calculate_vorticity<<<blocks, 1>>>(d_s);
 }
 
-void fsim_save_scalar_field(float* h_field, int* size_x, int* size_y, const char* filename){
+void fluidsim::fsim_save_scalar_field(float* h_field, int* size_x, int* size_y, const char* filename){
     FILE* fp = fopen(filename, "ab");
     if(fp){
         fwrite(size_x, sizeof(int), 1, fp);
@@ -35,7 +35,7 @@ void fsim_save_scalar_field(float* h_field, int* size_x, int* size_y, const char
     }
 }
 
-void fsim_csv_append(float* h_field, int* size_x, int* size_y, FILE* fp){
+void fluidsim::fsim_csv_append(float* h_field, int* size_x, int* size_y, FILE* fp){
     if(fp){
         char str_buf[100];
         snprintf(str_buf, 100, "%d, %d\n", *size_x, *size_y);
@@ -58,7 +58,7 @@ void fsim_csv_append(float* h_field, int* size_x, int* size_y, FILE* fp){
     }
 }
 
-void fsim_display_scalar_field(float* d_field, float* h_buffer, int size, int s_x, int s_y){
+void fluidsim::fsim_display_scalar_field(float* d_field, float* h_buffer, int size, int s_x, int s_y){
     cudaMemcpy(h_buffer, d_field, size, cudaMemcpyDeviceToHost);
     for(int i = 0; i < s_x; i++){
         for(int j = 0; j < s_y; j++){

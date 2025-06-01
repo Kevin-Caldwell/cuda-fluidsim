@@ -1,9 +1,11 @@
+#pragma once
+
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "errors.hpp"
-#include "sim_params.hpp"
+#include "errors.h"
+#include "sim_params.h"
 
 namespace utils {
 namespace backup {

@@ -1,4 +1,4 @@
-#include "config_reader.hpp"
+#include "config_reader.h"
 
 #include <fstream>
 #include <sstream>

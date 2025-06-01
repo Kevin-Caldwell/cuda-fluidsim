@@ -1,4 +1,4 @@
-#include "array_utils.hpp"
+#include "array_utils.h"
 
 float utils::array::max_arr(float *arr, int len)
 {

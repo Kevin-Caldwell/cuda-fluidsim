@@ -1,5 +1,4 @@
-#ifndef FSIM_MANAGER_H
-#define FSIM_MANAGER_H
+#pragma once
 
 /** Imports */
 #include <cuda_runtime.h>
@@ -24,5 +23,3 @@ void fsim_csv_append(float* h_field, int* size_x, int* size_y, FILE* fp);
 void fsim_display_scalar_field(float* d_field, float* h_buffer, int size, int s_x, int s_y);
 
 } // namespace fluidsim
-
-#endif /* FSIM_MANAGER_H */

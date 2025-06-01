@@ -1,5 +1,4 @@
-#ifndef LOG_H
-#define LOG_H
+#pragma once
 
 namespace utils {
 namespace log {
@@ -10,5 +9,3 @@ long int tock();
 
 }
 }
-
-#endif /* LOG_H */

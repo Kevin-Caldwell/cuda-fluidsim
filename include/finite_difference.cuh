@@ -16,7 +16,7 @@
 #include <helper_cuda.h>
 
 /** References */
-#include "sim_params.hpp"
+#include "sim_params.h"
 #include "defs.h"
 
 /**
@@ -32,5 +32,6 @@ __global__ void thread_update_v(SimData* data);
 
 /** Calculate Vorticity and store in data.temp_0 */
 __global__ void thread_calculate_vorticity(SimData* data);
+
 
 #endif /* FINITE_DIFFERENCE_H */

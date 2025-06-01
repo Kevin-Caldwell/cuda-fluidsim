@@ -1,4 +1,4 @@
-#include "ppm_handler.hpp"
+#include "ppm_handler.h"
 #include <stdio.h>
 
 #define X 100

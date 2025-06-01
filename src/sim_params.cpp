@@ -1,4 +1,4 @@
-#include "sim_params.hpp"
+#include "sim_params.h"
 #include <fstream>
 #include <sstream>
 #include <string>

@@ -1,11 +1,14 @@
-#include "log.hpp"
+#include "log.h"
 
 #include <ctime>
 #include <cstdio>
+#include <atomic>
 
-long int last_recorded_time;
+#define LOG_CLOCK CLOCK_MONOTONIC
 
-#define LOG_CLOCK CLOCK_REALTIME
+#define NANO (1000000000)
+
+long int last_recorded_time = 0;
 
 long int get_clocktime()
 {
@@ -15,7 +18,7 @@ long int get_clocktime()
         perror("Clock Gettime Failed");
     }
 
-    return (long int) ts.tv_nsec;
+    return (long int) ts.tv_sec * NANO + ts.tv_nsec;
 }
 
 long int utils::log::tick() 
