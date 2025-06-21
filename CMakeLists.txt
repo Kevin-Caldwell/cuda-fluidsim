@@ -1,9 +1,12 @@
-cmake_minimum_required(VERSION 3.28 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 project(cuda_fluidsim LANGUAGES CUDA CXX)
 
+find_package(CUDA REQUIRED)
+include_directories("${CUDA_INCLUDE_DIRS}")
 
+            
 include(CheckLanguage)
-check_language(CUDA)
+check_language(CUDA)                                                    
 
 enable_language(CUDA)
 
