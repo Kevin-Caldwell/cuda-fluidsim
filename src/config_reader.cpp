@@ -5,8 +5,8 @@
 #include <sstream>
 #include <string>
 
-ret_t utils::config_reader::parse_fsim_config(const char *filename,
-                                              sim_params_t *params) {
+ret_t config_reader::parse_fsim_config(const char *filename,
+                                       sim_params_t *params) {
 
   std::filesystem::path current_path = std::filesystem::current_path();
   std::cout << "Current working directory: " << current_path << std::endl;
