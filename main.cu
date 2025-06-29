@@ -1,4 +1,4 @@
-/** Imports */
+// #define VERBOSE
 #include <stdio.h>
 
 #include <cuda_runtime.h>
@@ -20,6 +20,7 @@
 #include "ppm_handler.h"
 
 // #define LOG_STEP_TIME
+
 
 char wbuf[40];
 
@@ -59,15 +60,15 @@ int main(void) {
   utils::log::tick();
 
   SimParams params;
-  // SimParams *d_params = NULL;
-  // SimData h_data;
+  SimParams *d_params;
+
   SimData *d_data = NULL;
 
   float *d_pressure = NULL, *d_u = NULL, *d_v = NULL;
-  float *d_temp0 = NULL, *d_temp1 = NULL;
   float *h_buffer = NULL;
 
   config_reader::parse_fsim_config("fsim.config", &params);
+  config_reader::print_params(&params);
 
   // const int dim_x = params.dim_x, dim_y = params.dim_y;
   const float tf = params.tf;
@@ -89,13 +90,10 @@ int main(void) {
 
   // Allocate Fields for holding Intermediate Values
   ptr<float> dev_temp0(elem_count, DEV_PTR);
-  d_temp0 = dev_temp0.get();
-
   ptr<float> dev_temp1(elem_count, DEV_PTR);
-  d_temp1 = dev_temp1.get();
+  ptr<float> host_buf(elem_count, HOST_PTR);
 
   // Allocate Temporary RAM Buffer to hold data to set/use Device Memory
-  ptr<float> host_buf(elem_count, HOST_PTR);
   h_buffer = host_buf.get();
 
   dim3 blocks = {(unsigned)params.dim_x, (unsigned)params.dim_y};
@@ -117,13 +115,37 @@ int main(void) {
   time = utils::log::tock();
   printf("Setup Time: %ld ms\n", time / 1000000);
 
+  ptr<SimParams> dev_params(1, DEV_PTR);
+  cudaMemcpy(dev_params.get(), &params, sizeof(SimParams), cudaMemcpyHostToDevice);
+
+  SimData dat = {.params = dev_params.get(),
+                 .u = d_u,
+                 .v = d_v,
+                 .pressure = d_pressure,
+                 .temp_0 = dev_temp0.get(),
+                 .temp_1 = dev_temp1.get()};
+
+  ptr<SimData> dev_data(1, DEV_PTR);
+  cudaMemcpy(dev_data.get(), &dat, sizeof(SimData), cudaMemcpyHostToDevice);
+  
+  d_data = dev_data.get();
+
   for (params.t = 0; params.t < tf; params.t += params.dt) {
+
+#ifdef VERBOSE
+    printf("Starting Iteration\n");
+#endif
 
     write(STDOUT_FILENO, "\r", 1);
     printf("%08f/%08f\t%f", params.t, tf, (float)utils::log::tock() / 1000000);
 
     // Copy U, V, P from GPU to Memory and save to csv for Debugging
     if (save_arena) {
+
+#ifdef VERBOSE
+      printf("Saving Field\n");
+#endif
+
 #ifdef LOG_STEP_TIME
       printf("\t Render Time: %d\t", utils::log::tock() / 1000000);
 #endif
@@ -150,14 +172,22 @@ int main(void) {
 #endif
     }
 
+#ifdef VERBOSE
+    printf("Pressure Smoothing\n");
+#endif
+
     // Iteratively Smooth Pressure
     for (int i = 0; i < params.smoothing; i++) {
       fluidsim::fsim_smooth_pressure(d_data, blocks);
-      cudaMemcpy(d_pressure, d_temp0, buffer_size, cudaMemcpyDeviceToDevice);
+      dev_pressure.copy_data(&dev_temp0);
     }
 
 #ifdef LOG_STEP_TIME
     printf("%d\t", utils::log::tock() / 1000000);
+#endif
+
+#ifdef VERBOSE
+    printf("Updating Velocity Field\n");
 #endif
 
     // Update Velocity Vector Field
@@ -167,11 +197,18 @@ int main(void) {
 #ifdef LOG_STEP_TIME
     printf("%d\t", utils::log::tock() / 1000000);
 #endif
-    printf("IFEfe fe JIFEJ1\n");
+
     dev_u.copy_data(&dev_temp0);
-    printf("IFEfe fe JIFEJ2\n");
+
+#ifdef VERBOSE
+    std::cout << "\nDEV_U: " << dev_u << ", TEMP0: " << dev_temp0 << std::endl;
+#endif
+
     dev_v.copy_data(&dev_temp1);
-    printf("IFEfe fe JIFEJ3\n");
+
+#ifdef VERBOSE
+    std::cout << "DEV_V: " << dev_v << ", TEMP1: " << dev_temp1 << std::endl;
+#endif
 
 #ifdef LOG_STEP_TIME
     printf("%d\t", utils::log::tock() / 1000000);
@@ -182,14 +219,6 @@ int main(void) {
   }
 
   printf("\nFreeing all Allocated Memory.\n");
-
-  // Free all allocated Buffers
-  free(h_buffer);
-  cudaFree(d_pressure);
-  cudaFree(d_u);
-  cudaFree(d_v);
-  cudaFree(d_temp0);
-  cudaFree(d_temp1);
 
   system("./../../../vidgen.sh");
   system("rm -r temp");

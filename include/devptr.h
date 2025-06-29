@@ -2,14 +2,32 @@
 
 #include <cstring>
 #include <cuda_runtime.h>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
 
 #include "errors.h"
 
 #define PTR_DEBUG 1
 
 enum ptr_location { NO_INIT = 0, HOST_PTR, DEV_PTR };
+
+std::string location_to_str(ptr_location loc) {
+  switch (loc) {
+  case NO_INIT:
+    return "NOINIT";
+    break;
+  case HOST_PTR:
+    return "HOST";
+
+  case DEV_PTR:
+    return "DEVICE";
+
+  default:
+    return "INVALID";
+  }
+}
 
 typedef ptr_location loc_t;
 
@@ -23,21 +41,20 @@ private:
   loc_t loc_;
 
   inline void update_sz() { sz_ = count_ * sizeof(T); }
-  inline ret_t alloc_(void **ptr, int sz, loc_t loc) {
+  inline ret_t alloc_(void **p, int sz, loc_t loc) {
     switch (loc) {
     case NO_INIT:
       ERROR_EQ(true, true, "Pointer Location Invalid", ERR_PTR_NOINIT);
       break;
 
     case HOST_PTR: {
-      *ptr = (T *)malloc(sz);
-      ERROR_EQ(ptr, nullptr, "Host Alloc Failed.", HOST_ALLOC_FAIL);
+      *p = (T *)malloc(sz);
+      ERROR_EQ(p, nullptr, "Host Alloc Failed.", HOST_ALLOC_FAIL);
       break;
     }
 
     case DEV_PTR: {
-      printf("%p, %d\n", ptr, sz);
-      ERROR_NEQ(cudaMalloc(ptr, sz), cudaSuccess, "Device Alloc Failed.",
+      ERROR_NEQ(cudaMalloc(p, sz), cudaSuccess, "Device Alloc Failed.",
                 CUDA_ALLOC_FAIL);
       break;
     }
@@ -50,6 +67,11 @@ private:
     return RES_OK;
   }
   inline ret_t free_(void *ptr, loc_t loc) {
+
+#ifdef VERBOSE
+    printf("FREEING %p from %d", ptr, loc);
+#endif
+
     switch (loc) {
     case HOST_PTR:
       free(ptr);
@@ -77,11 +99,33 @@ private:
 public:
   ptr(int count, loc_t loc) : count_(count), loc_(loc), sz_(count * sizeof(T)) {
     ERROR_NEQ(alloc_((void **)&ptr_, sz_, loc_), RES_OK, "Alloc Failed", );
+
+#ifdef VERBOSE
+    printf("Allocated: {%p, %d, %d, %s}\n", ptr_, count_, sz_,
+           location_to_str(loc_).c_str());
+#endif
   }
 
   ~ptr() { ERROR_NEQ(free_(ptr_, loc_), RES_OK, "Unable to Free", ); }
 
   T *get() const { return ptr_; }
+
+  int size() const { return sz_; }
+
+  int count() const { return count_; }
+
+  inline std::string loc() const {
+    switch (loc_) {
+    case HOST_PTR:
+      return "HOST";
+
+    case DEV_PTR:
+      return "DEVICE";
+
+    default:
+      return "NOINIT";
+    }
+  }
 
   ret_t resize(int new_count, bool preserve) {
     ERROR_EQ(loc_, NO_INIT, "Ptr location not initialized", ERR_PTR_NOINIT);
@@ -105,10 +149,10 @@ public:
   }
 
   ret_t copy_data(ptr<T> *src) {
-
+#ifdef VERBOSE
+    std::cout << "Copying from " << *src << " to " << *this << std::endl;
+#endif
     ERROR_EQ(src->loc_, NO_INIT, "", ERR_PTR_NOINIT);
-    printf("FEIJ {%p, %d, %d, %d} to {%p, %d, %d, %d}  \n", ptr_, count_, sz_,
-           loc_, src->ptr_, src->count_, src->sz_, src->loc_);
 
     if (loc_ == NO_INIT) {
       loc_ = HOST_PTR;
@@ -125,12 +169,20 @@ public:
       ERROR_NEQ(cudaMemcpy(ptr_, src->ptr_, src->sz_, cudaMemcpyHostToDevice),
                 cudaSuccess, "CUDA memcpy to device failed.", MEMCPY_FAIL);
     } else if (loc_ == DEV_PTR && src->loc_ == DEV_PTR) {
-      // cudaError_t res = cudaMemcpy(ptr_, src->ptr_, src->sz_,
-      // cudaMemcpyDeviceToDevice); printf("ERROR: %d\n", res);
-      ERROR_NEQ(cudaMemcpy(ptr_, src->ptr_, src->sz_, cudaMemcpyDeviceToDevice),
+      // cudaError_t res =
+      // cudaMemcpy(ptr_, src->ptr_, src->sz_, cudaMemcpyDeviceToDevice);
+      // printf("ERROR: %d\n", res);
+      ERROR_NEQ(cudaMemcpy((void *)ptr_, (void *)src->ptr_, src->sz_,
+                           cudaMemcpyDeviceToDevice),
                 cudaSuccess, "CUDA memcpy to device failed.", MEMCPY_FAIL);
     }
 
     return RES_OK;
   }
 };
+
+template <class T> std::ostream &operator<<(std::ostream &os, const ptr<T> &p) {
+  os << "{" << p.get() << ", " << p.count() << ", " << p.size() << ", "
+     << p.loc().c_str() << "}";
+  return os;
+}

@@ -53,3 +53,21 @@ ret_t config_reader::parse_fsim_config(const char *filename,
 
   return RES_OK;
 }
+
+void config_reader::print_params(sim_params_t *params) {
+  printf("_____________________\n");
+  printf("SIMULATION PARAMETERS\n");
+  printf("_____________________\n");
+  printf("%-10s %10d\n", "DIMX :", params->dim_x);
+  printf("%-10s %10d\n", "DIMY :", params->dim_y);
+  printf("%-10s %10f\n", "WIDTH :", params->size_x);
+  printf("%-10s %10f\n", "HEIGHT :", params->size_y);
+  printf("%-10s %10f\n", "DT :", params->dt);
+  printf("%-10s %10f\n", "TF :", params->tf);
+  printf("%-10s %10f\n", "U :", params->offset_vel_x);
+  printf("%-10s %10f\n", "V :", params->offset_vel_y);
+  printf("%-10s %10d\n", "SMOOTH :", params->smoothing);
+  printf("%-10s %10f\n", "DENSITY :", params->density);
+  printf("%-10s %10f\n", "VISC :", params->viscosity);
+  printf("_____________________\n");
+}

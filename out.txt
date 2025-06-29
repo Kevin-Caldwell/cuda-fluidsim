@@ -1,0 +1,34 @@
+Devices Found: 1
+Device Number: 0
+  Device name: NVIDIA GeForce RTX 3060 Laptop GPU
+  Memory Clock Rate (KHz): 7001000
+  Memory Bus Width (bits): 192
+  Peak Memory Bandwidth (GB/s): 336.048000
+
+Current working directory: "/home/kevinc/Kevin/research/integrated-last-mile-delivery/code/cuda-fluidsim"
+_____________________
+SIMULATION PARAMETERS
+_____________________
+DIMX :           1024
+DIMY :           1024
+WIDTH :      1.000000
+HEIGHT :     1.000000
+DT :         0.000078
+TF :         0.050000
+U :          0.100000
+V :          0.000000
+SMOOTH :           10
+DENSITY :    1.293000
+VISC :       0.000000
+_____________________
+Allocated: {0x7f990e800000, 1048576, 4194304, DEVICE}
+Allocated: {0x7f990ec00000, 1048576, 4194304, DEVICE}
+Allocated: {0x7f990f000000, 1048576, 4194304, DEVICE}
+Allocated: {0x7f990f400000, 1048576, 4194304, DEVICE}
+Allocated: {0x7f990f800000, 1048576, 4194304, DEVICE}
+Allocated: {0x7f99198a6010, 1048576, 4194304, HOST}
+Successfully Allocated Memory...
+Setup Time: 119 ms
+Allocated: {0x7f990fc00000, 1, 64, DEVICE}
+Allocated: {0x7f990fc00200, 1, 48, DEVICE}
+0.000000/0.050000	0.5370580.000078/0.050000	254.2190400.000156/0.050000	336.5921330.000234/0.050000	334.8752750.000312/0.050000	333.0205990.000391/0.050000	319.9528500.000469/0.050000	318.0813290.000547/0.050000	363.5202330.000625/0.050000	329.8673710.000703/0.050000	329.693604
