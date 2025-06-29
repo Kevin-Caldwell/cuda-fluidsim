@@ -4,12 +4,15 @@
 #include <cuda_runtime.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 char *h_chbuffer = NULL;
 
 void render_scalar_field(ppm_handler img_creator, int index,
                          const char *annotation, int elem_count, float *d_data,
                          float *h_buffer) {
+
+  h_chbuffer = (char *)malloc(elem_count * sizeof(char));
 
   char filename_buf[100];
 
@@ -22,6 +25,8 @@ void render_scalar_field(ppm_handler img_creator, int index,
                                255 / (max - min), min);
   snprintf(filename_buf, 100, "temp/%s_%03d.ppm", annotation, index);
   img_creator.write_ppm(filename_buf, h_chbuffer);
+
+  free(h_chbuffer);
 }
 
 ImageWriteThread::ImageWriteThread(uint32_t width, uint32_t height,

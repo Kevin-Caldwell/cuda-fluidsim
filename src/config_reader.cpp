@@ -11,8 +11,7 @@ ret_t config_reader::parse_fsim_config(const char *filename,
   std::filesystem::path current_path = std::filesystem::current_path();
   std::cout << "Current working directory: " << current_path << std::endl;
 
-  std::ifstream file(
-      filename); // Replace "config.txt" with your actual file name
+  std::ifstream file(filename);
   if (!file.is_open()) {
     std::cerr << "Error opening file.\n";
     return ERR_FOPEN;

@@ -14,9 +14,12 @@
 // #include "include/ppm_handler.h"
 #include "array_utils.h"
 #include "device_utils.h"
+#include "devptr.h"
 #include "img_thread.h"
 #include "log.h"
 #include "ppm_handler.h"
+
+// #define LOG_STEP_TIME
 
 char wbuf[40];
 
@@ -30,13 +33,6 @@ void velocity_field_init(int elem_count, int buffer_size, int dim_x, int dim_y,
   }
 
   h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] = 0.5;
-
-  // for (int i = dim_y / 3; i < 2 * dim_y / 3; i++)
-  // {
-  //     h_buffer[elem(dim_x / 2, i, dim_x)] = 0.1;
-  // }
-
-  // fill_random(h_buffer, elem_count);
 
   cudaMemcpy(d_u, h_buffer, buffer_size, cudaMemcpyHostToDevice);
 
@@ -53,25 +49,6 @@ void velocity_field_init(int elem_count, int buffer_size, int dim_x, int dim_y,
   cudaMemcpy(d_pressure, h_buffer, buffer_size, cudaMemcpyHostToDevice);
 }
 
-// char *h_chbuffer = NULL;
-
-// void render_scalar_field(ppm_handler img_creator, int index,
-//                          const char *annotation, int elem_count, float
-//                          *d_data, float *h_buffer) {
-
-//   char filename_buf[100];
-
-//   cudaMemcpy(h_buffer, d_data, elem_count * sizeof(float),
-//              cudaMemcpyDeviceToHost);
-//   float max = utils::array::max_arr(h_buffer, elem_count);
-//   float min = utils::array::min_arr(h_buffer, elem_count);
-//   // printf("(%03f, %03f)", max, min);
-//   utils::array::fl_to_char_arr(h_buffer, h_chbuffer, elem_count,
-//                                255 / (max - min), min);
-//   snprintf(filename_buf, 100, "temp/%s_%03d.ppm", annotation, index);
-//   img_creator.write_ppm(filename_buf, h_chbuffer);
-// }
-
 int main(void) {
   if (gpu::check_cuda_dev()) {
     perror("GPU not found");
@@ -82,8 +59,8 @@ int main(void) {
   utils::log::tick();
 
   SimParams params;
-  SimParams *d_params = NULL;
-  SimData h_data;
+  // SimParams *d_params = NULL;
+  // SimData h_data;
   SimData *d_data = NULL;
 
   float *d_pressure = NULL, *d_u = NULL, *d_v = NULL;
@@ -98,36 +75,30 @@ int main(void) {
   params.dx = params.size_x / (float)params.dim_x;
   params.dy = params.size_y / (float)params.dim_y;
 
-  cudaMalloc(&d_params, sizeof(SimParams));
-  cudaMemcpy(d_params, &params, sizeof(SimParams), cudaMemcpyHostToDevice);
-
   int buffer_size = params.dim_x * params.dim_y * sizeof(float);
   int elem_count = params.dim_x * params.dim_y;
 
   // Allocate Memory for Velocity and Pressure Fields
-  cudaMalloc((void **)&d_pressure, buffer_size);
-  cudaMalloc((void **)&d_u, buffer_size);
-  cudaMalloc((void **)&d_v, buffer_size);
+  ptr<float> dev_pressure(elem_count, DEV_PTR);
+  ptr<float> dev_u(elem_count, DEV_PTR);
+  ptr<float> dev_v(elem_count, DEV_PTR);
+
+  d_pressure = dev_pressure.get();
+  d_u = dev_u.get();
+  d_v = dev_u.get();
+
   // Allocate Fields for holding Intermediate Values
-  cudaMalloc((void **)&d_temp0, buffer_size);
-  cudaMalloc((void **)&d_temp1, buffer_size);
+  ptr<float> dev_temp0(elem_count, DEV_PTR);
+  d_temp0 = dev_temp0.get();
+
+  ptr<float> dev_temp1(elem_count, DEV_PTR);
+  d_temp1 = dev_temp1.get();
 
   // Allocate Temporary RAM Buffer to hold data to set/use Device Memory
-  h_buffer = (float *)malloc(buffer_size);
-  // h_chbuffer = (char *)malloc(elem_count * sizeof(char));
+  ptr<float> host_buf(elem_count, HOST_PTR);
+  h_buffer = host_buf.get();
 
   dim3 blocks = {(unsigned)params.dim_x, (unsigned)params.dim_y};
-
-  // Initialize SimData Struct for the host
-  h_data = {.params = d_params,
-            .u = d_u,
-            .v = d_v,
-            .pressure = d_pressure,
-            .temp_0 = d_temp0,
-            .temp_1 = d_temp1};
-
-  cudaMalloc((void **)&d_data, sizeof(SimData));
-  cudaMemcpy(d_data, &h_data, sizeof(SimData), cudaMemcpyHostToDevice);
 
   printf("Successfully Allocated Memory...\n");
 
@@ -144,25 +115,39 @@ int main(void) {
   ppm_handler img_creater = ppm_handler(params.dim_x, params.dim_y, 0);
 
   time = utils::log::tock();
-  printf("Setup Time: %ld ms ", time / 1000000);
+  printf("Setup Time: %ld ms\n", time / 1000000);
 
-  for (; params.t < tf; params.t += params.dt) {
+  for (params.t = 0; params.t < tf; params.t += params.dt) {
+
     write(STDOUT_FILENO, "\r", 1);
-    printf("%08f/%08f\t%f", params.t, tf, utils::log::tock() / 1000000);
-    // save_arena = iterations % 1 == 0;
+    printf("%08f/%08f\t%f", params.t, tf, (float)utils::log::tock() / 1000000);
 
     // Copy U, V, P from GPU to Memory and save to csv for Debugging
     if (save_arena) {
-      printf("Render Time: %d\t", utils::log::tock() / 1000000);
+#ifdef LOG_STEP_TIME
+      printf("\t Render Time: %d\t", utils::log::tock() / 1000000);
+#endif
+
       render_scalar_field(img_creater, iterations, "u", elem_count, d_u,
                           h_buffer);
+
+#ifdef LOG_STEP_TIME
       printf("%d\t", utils::log::tock() / 1000000);
+#endif
+
       render_scalar_field(img_creater, iterations, "v", elem_count, d_v,
                           h_buffer);
+
+#ifdef LOG_STEP_TIME
       printf("%d\t", utils::log::tock() / 1000000);
+#endif
+
       render_scalar_field(img_creater, iterations, "pressure", elem_count,
                           d_pressure, h_buffer);
+
+#ifdef LOG_STEP_TIME
       printf("%d\t", utils::log::tock() / 1000000);
+#endif
     }
 
     // Iteratively Smooth Pressure
@@ -170,22 +155,33 @@ int main(void) {
       fluidsim::fsim_smooth_pressure(d_data, blocks);
       cudaMemcpy(d_pressure, d_temp0, buffer_size, cudaMemcpyDeviceToDevice);
     }
+
+#ifdef LOG_STEP_TIME
     printf("%d\t", utils::log::tock() / 1000000);
+#endif
 
     // Update Velocity Vector Field
     fluidsim::fsim_update_u(d_data, blocks);
     fluidsim::fsim_update_v(d_data, blocks);
-    printf("%d\t", utils::log::tock() / 1000000);
 
-    cudaMemcpy(d_u, d_temp0, buffer_size, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(d_v, d_temp1, buffer_size, cudaMemcpyDeviceToDevice);
+#ifdef LOG_STEP_TIME
     printf("%d\t", utils::log::tock() / 1000000);
+#endif
+    printf("IFEfe fe JIFEJ1\n");
+    dev_u.copy_data(&dev_temp0);
+    printf("IFEfe fe JIFEJ2\n");
+    dev_v.copy_data(&dev_temp1);
+    printf("IFEfe fe JIFEJ3\n");
+
+#ifdef LOG_STEP_TIME
+    printf("%d\t", utils::log::tock() / 1000000);
+#endif
 
     fflush(0);
     iterations++;
   }
 
-  printf("Freeing all Allocated Memory.\n");
+  printf("\nFreeing all Allocated Memory.\n");
 
   // Free all allocated Buffers
   free(h_buffer);

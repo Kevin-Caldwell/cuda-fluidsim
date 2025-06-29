@@ -48,7 +48,6 @@ ret_t backup::setup_backup() {
 ret_t backup::exit_backup(SimParams *p) {
   write_parameters_to_file("backup.config", p);
   chdir(return_folder);
-
   return RES_OK;
 }
 
