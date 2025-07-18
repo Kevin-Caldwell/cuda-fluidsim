@@ -5,9 +5,9 @@
  * finite_difference.h
  * @author Kevin Caldwell
  * @date 27/09/2024
- * 
- * File contains the CUDA implementation of multiple kernel-level functions for 
- * computing various quantities for CFD simulations using the Finite Difference 
+ *
+ * File contains the CUDA implementation of multiple kernel-level functions for
+ * computing various quantities for CFD simulations using the Finite Difference
  * Method.
  */
 
@@ -16,8 +16,8 @@
 #include <helper_cuda.h>
 
 /** References */
-#include "sim_params.h"
 #include "defs.h"
+#include "sim_params.h"
 
 __global__ void thread_pressure_smoothing(const float *u,
                                           const float *v,
