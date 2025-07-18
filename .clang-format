@@ -1,0 +1,21 @@
+BasedOnStyle: Google
+Language: Cpp
+
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: None
+AlignOperands: Align
+AlignTrailingComments: 
+    Kind: Always
+    OverEmptyLines: 4
+
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+BinPackArguments: false
+BinPackParameters: false
+
+ColumnLimit: 80
+IndentWidth: 2
+BreakBeforeBraces: Linux
+
+UseTab: Never
