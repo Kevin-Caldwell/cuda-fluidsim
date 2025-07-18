@@ -3,7 +3,8 @@
 #include "errors.h"
 #include "sim_params.h"
 
-namespace backup {
+namespace backup
+{
 
 constexpr int max_file_length = 100;
 
@@ -16,12 +17,13 @@ extern char backup_location[];
 
 extern int backup_count;
 
-class Backup {
-public:
+class Backup
+{
+ public:
   Backup();
   ~Backup();
 
-private:
+ private:
   char backup_location_[max_file_length];
   int backup_count_;
 };
@@ -30,4 +32,4 @@ ret_t setup_backup();
 
 ret_t exit_backup(SimParams *p);
 
-} // namespace backup
+}  // namespace backup

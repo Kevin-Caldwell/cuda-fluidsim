@@ -1,8 +1,8 @@
 #pragma once
 
-namespace gpu {
+namespace gpu
+{
 
 int check_cuda_dev();
 
 }
-
