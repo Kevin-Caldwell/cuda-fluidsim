@@ -2,25 +2,70 @@
 
 #include <stdio.h>
 
-
-void __host__ fluidsim::fsim_smooth_pressure(SimData *d_s, dim3 blocks)
+void __host__ fluidsim::fsim_smooth_pressure(SimData* d_s,
+                                             const SimParams& params,
+                                             dim3 blocks)
 {
-    thread_pressure_smoothing<<<blocks, 1>>>(d_s);
+  thread_pressure_smoothing<<<blocks, 1>>>(d_s->u,
+                                           d_s->v,
+                                           d_s->pressure,
+                                           d_s->temp_0,
+                                           params.dim_x,
+                                           params.dim_y,
+                                           params.dx,
+                                           params.dy,
+                                           params.dt,
+                                           params.density,
+                                           params.viscosity);
 }
 
-void __host__ fluidsim::fsim_update_u(SimData *d_s, dim3 blocks)
+void __host__ fluidsim::fsim_update_u(SimData* d_s,
+                                      const SimParams& params,
+                                      dim3 blocks)
 {
-    thread_update_u<<<blocks, 1>>>(d_s);
+  thread_update_u<<<blocks, 1>>>(d_s->u,
+                                 d_s->v,
+                                 d_s->pressure,
+                                 d_s->temp_0,
+                                 params.dim_x,
+                                 params.dim_y,
+                                 params.dx,
+                                 params.dy,
+                                 params.dt,
+                                 params.offset_vel_x,
+                                 params.density,
+                                 params.viscosity);
 }
 
-void __host__ fluidsim::fsim_update_v(SimData *d_s, dim3 blocks)
+void __host__ fluidsim::fsim_update_v(SimData* d_s,
+                                      const SimParams& params,
+                                      dim3 blocks)
 {
-    thread_update_v<<<blocks, 1>>>(d_s);
+  thread_update_v<<<blocks, 1>>>(d_s->u,
+                                 d_s->v,
+                                 d_s->pressure,
+                                 d_s->temp_1,
+                                 params.dim_x,
+                                 params.dim_y,
+                                 params.dx,
+                                 params.dy,
+                                 params.dt,
+                                 params.offset_vel_y,
+                                 params.density,
+                                 params.viscosity);
 }
 
-void __host__ fluidsim::fsim_vorticity_map(SimData *d_s, dim3 blocks)
+void __host__ fluidsim::fsim_vorticity_map(SimData* d_s,
+                                           const SimParams& params,
+                                           dim3 blocks)
 {
-    thread_calculate_vorticity<<<blocks, 1>>>(d_s);
+  thread_calculate_vorticity<<<blocks, 1>>>(d_s->u,
+                                            d_s->v,
+                                            d_s->temp_0,
+                                            params.dim_x,
+                                            params.dim_y,
+                                            params.dx,
+                                            params.dy);
 }
 
 void fluidsim::fsim_save_scalar_field(float* h_field, int* size_x, int* size_y, const char* filename){

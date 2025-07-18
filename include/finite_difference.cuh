@@ -19,19 +19,50 @@
 #include "sim_params.h"
 #include "defs.h"
 
-/**
- * Calculates new pressure value for given grid point, stores in data.pressure
- */
-__global__ void thread_pressure_smoothing(SimData* data);
+__global__ void thread_pressure_smoothing(const float *u,
+                                          const float *v,
+                                          const float *pr,
+                                          float *temp,
+                                          const int dim_x,
+                                          const int dim_y,
+                                          const float dx,
+                                          const float dy,
+                                          const float dt,
+                                          const float density,
+                                          const float viscosity);
 
-/** Calculates horizontal velocity component after dt, stores in data.u */
-__global__ void thread_update_u(SimData* data);
+__global__ void thread_update_u(const float *u,
+                                const float *v,
+                                const float *pr,
+                                float *temp,
+                                const int dim_x,
+                                const int dim_y,
+                                const float dx,
+                                const float dy,
+                                const float dt,
+                                const float offset_vel_x,
+                                const float density,
+                                const float viscosity);
 
-/** Calculates vertical velocity component after dt, stores in data.v*/
-__global__ void thread_update_v(SimData* data);
+__global__ void thread_update_v(const float *u,
+                                const float *v,
+                                const float *pr,
+                                float *temp,
+                                const int dim_x,
+                                const int dim_y,
+                                const float dx,
+                                const float dy,
+                                const float dt,
+                                const float offset_vel_y,
+                                const float density,
+                                const float viscosity);
 
-/** Calculate Vorticity and store in data.temp_0 */
-__global__ void thread_calculate_vorticity(SimData* data);
-
+__global__ void thread_calculate_vorticity(const float *u,
+                                           const float *v,
+                                           float *temp,
+                                           const int dim_x,
+                                           const int dim_y,
+                                           const float dx,
+                                           const float dy);
 
 #endif /* FINITE_DIFFERENCE_H */

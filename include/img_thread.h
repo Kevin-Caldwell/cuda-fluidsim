@@ -4,8 +4,11 @@
 #include <ppm_handler.h>
 #include <pthread.h>
 
-void render_scalar_field(ppm_handler img_creator, int index,
-                         const char *annotation, int elem_count, float *d_data,
+void render_scalar_field(ppm_handler img_creator,
+                         const int index,
+                         const char *annotation,
+                         const int elem_count,
+                         const float *d_data,
                          float *h_buffer);
 
 class ImageWriteThread {

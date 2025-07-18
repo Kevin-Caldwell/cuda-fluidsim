@@ -33,7 +33,11 @@ void velocity_field_init(int elem_count, int buffer_size, int dim_x, int dim_y,
     h_buffer[i] = params->offset_vel_x;
   }
 
-  h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] = 0.5;
+  // h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] =
+  // 1;
+  for (int i = 0; i < dim_x; i++) {
+    h_buffer[elem(i, dim_y / 2, dim_x)] = 1.0;
+  }
 
   cudaMemcpy(d_u, h_buffer, buffer_size, cudaMemcpyHostToDevice);
 
@@ -60,7 +64,7 @@ int main(void) {
   utils::log::tick();
 
   SimParams params;
-  SimParams *d_params;
+  // SimParams *d_params;
 
   SimData *d_data = NULL;
 
@@ -118,9 +122,9 @@ int main(void) {
   ptr<SimParams> dev_params(1, DEV_PTR);
   cudaMemcpy(dev_params.get(), &params, sizeof(SimParams), cudaMemcpyHostToDevice);
 
-  SimData dat = {.params = dev_params.get(),
-                 .u = d_u,
-                 .v = d_v,
+  SimData dat = {.params = params,
+                 .u = dev_u.get(),
+                 .v = dev_v.get(),
                  .pressure = d_pressure,
                  .temp_0 = dev_temp0.get(),
                  .temp_1 = dev_temp1.get()};
@@ -129,6 +133,9 @@ int main(void) {
   cudaMemcpy(dev_data.get(), &dat, sizeof(SimData), cudaMemcpyHostToDevice);
   
   d_data = dev_data.get();
+
+  const char *annotations[] = {"u", "v", "pressure"};
+  const float *d_ptr[] = {d_u, d_v, d_pressure};
 
   for (params.t = 0; params.t < tf; params.t += params.dt) {
 
@@ -146,30 +153,23 @@ int main(void) {
       printf("Saving Field\n");
 #endif
 
+      for (int i = 0; i < 3; ++i) {
 #ifdef LOG_STEP_TIME
-      printf("\t Render Time: %d\t", utils::log::tock() / 1000000);
+        printf("\t Render Time: %d\t", utils::log::tock() / 1000000);
 #endif
 
-      render_scalar_field(img_creater, iterations, "u", elem_count, d_u,
-                          h_buffer);
+        render_scalar_field(img_creater,
+                            iterations,
+                            annotations[i],
+                            elem_count,
+                            d_ptr[i],
+                            h_buffer);
+      }
 
-#ifdef LOG_STEP_TIME
-      printf("%d\t", utils::log::tock() / 1000000);
-#endif
-
-      render_scalar_field(img_creater, iterations, "v", elem_count, d_v,
-                          h_buffer);
-
-#ifdef LOG_STEP_TIME
-      printf("%d\t", utils::log::tock() / 1000000);
-#endif
-
-      render_scalar_field(img_creater, iterations, "pressure", elem_count,
-                          d_pressure, h_buffer);
-
-#ifdef LOG_STEP_TIME
-      printf("%d\t", utils::log::tock() / 1000000);
-#endif
+      // #ifdef LOG_STEP_TIME
+      //       printf("%d\t", utils::log::tock() /
+      //       1000000);
+      // #endif
     }
 
 #ifdef VERBOSE
@@ -178,7 +178,7 @@ int main(void) {
 
     // Iteratively Smooth Pressure
     for (int i = 0; i < params.smoothing; i++) {
-      fluidsim::fsim_smooth_pressure(d_data, blocks);
+      fluidsim::fsim_smooth_pressure(&dat, params, blocks);
       dev_pressure.copy_data(&dev_temp0);
     }
 
@@ -191,8 +191,8 @@ int main(void) {
 #endif
 
     // Update Velocity Vector Field
-    fluidsim::fsim_update_u(d_data, blocks);
-    fluidsim::fsim_update_v(d_data, blocks);
+    fluidsim::fsim_update_u(&dat, params, blocks);
+    fluidsim::fsim_update_v(&dat, params, blocks);
 
 #ifdef LOG_STEP_TIME
     printf("%d\t", utils::log::tock() / 1000000);

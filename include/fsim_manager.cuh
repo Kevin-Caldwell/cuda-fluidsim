@@ -8,13 +8,17 @@
 
 namespace fluidsim {
 
-void __host__ fsim_smooth_pressure(SimData *d_s, dim3 blocks);
+void __host__ fsim_smooth_pressure(SimData* d_s,
+                                   const SimParams& params,
+                                   dim3 blocks);
 
-void __host__ fsim_update_u(SimData *d_s, dim3 blocks);
+void __host__ fsim_update_u(SimData* d_s, const SimParams& params, dim3 blocks);
 
-void __host__ fsim_update_v(SimData *d_s, dim3 blocks);
+void __host__ fsim_update_v(SimData* d_s, const SimParams& params, dim3 blocks);
 
-void __host__ fsim_vorticity_map(SimData *d_s, dim3 blocks);
+void __host__ fsim_vorticity_map(SimData* d_s,
+                                 const SimParams& params,
+                                 dim3 blocks);
 
 void fsim_save_scalar_field(float *h_field, int* size_x, int* size_y, const char *filename);
 
