@@ -3,7 +3,8 @@
 **Author**: Kevin Caldwell
 
 This project implements a 2D fluid simulation hardware accelerated for
-CUDA devices.
+CUDA devices. This is a part of a larger project analyzing the effects
+of wind on Truck-Drone delivery within cities.
 
 ## Prerequisites
 
