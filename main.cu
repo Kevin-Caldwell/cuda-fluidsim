@@ -8,16 +8,16 @@
 #include <unistd.h>
 // #include <limits.h>
 
-#include "backups.h"
-#include "config_reader.h"
-#include "fsim_manager.cuh"
+#include "fsim/fsim_manager.cuh"
+#include "io/backups.h"
+#include "io/config_reader.h"
 // #include "include/ppm_handler.h"
-#include "array_utils.h"
-#include "device_utils.h"
-#include "devptr.h"
 #include "img_thread.h"
-#include "log.h"
-#include "ppm_handler.h"
+#include "io/log.h"
+#include "io/ppm_handler.h"
+#include "utils/array_utils.h"
+#include "utils/device_utils.h"
+#include "utils/devptr.h"
 
 // #define LOG_STEP_TIME
 
@@ -64,9 +64,6 @@ int main(void) {
   utils::log::tick();
 
   SimParams params;
-  // SimParams *d_params;
-
-  SimData *d_data = NULL;
 
   float *d_pressure = NULL, *d_u = NULL, *d_v = NULL;
   float *h_buffer = NULL;
@@ -131,8 +128,8 @@ int main(void) {
 
   ptr<SimData> dev_data(1, DEV_PTR);
   cudaMemcpy(dev_data.get(), &dat, sizeof(SimData), cudaMemcpyHostToDevice);
-  
-  d_data = dev_data.get();
+
+  // d_data = dev_data.get();
 
   const char *annotations[] = {"u", "v", "pressure"};
   const float *d_ptr[] = {d_u, d_v, d_pressure};

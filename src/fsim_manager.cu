@@ -1,6 +1,6 @@
-#include "fsim_manager.cuh"
-
 #include <stdio.h>
+
+#include "fsim/fsim_manager.cuh"
 
 void __host__ fluidsim::fsim_smooth_pressure(SimData* d_s,
                                              const SimParams& params,

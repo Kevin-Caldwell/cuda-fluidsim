@@ -1,5 +1,6 @@
-#include "ppm_handler.h"
 #include <stdio.h>
+
+#include "io/ppm_handler.h"
 
 #define X 100
 #define Y 300

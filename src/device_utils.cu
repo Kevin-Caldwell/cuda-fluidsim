@@ -1,6 +1,6 @@
-#include "device_utils.h"
-
 #include <stdio.h>
+
+#include "utils/device_utils.h"
 
 int gpu::check_cuda_dev()
 {

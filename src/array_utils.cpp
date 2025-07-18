@@ -1,4 +1,4 @@
-#include "array_utils.h"
+#include "utils/array_utils.h"
 
 #include "stdio.h"
 

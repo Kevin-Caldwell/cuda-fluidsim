@@ -1,7 +1,7 @@
 #pragma once
 
 #include <inttypes.h>
-#include <ppm_handler.h>
+#include <io/ppm_handler.h>
 #include <pthread.h>
 
 void render_scalar_field(ppm_handler img_creator,
