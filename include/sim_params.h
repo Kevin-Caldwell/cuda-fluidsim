@@ -34,8 +34,7 @@ typedef struct SimParams SimParams;
 typedef struct SimParams sim_params_t;
 
 struct SimData{
-
-    SimParams* params; /** Store Relevant parameters */
+    SimParams params; /** Store Relevant parameters */
 
     /** Variables */
     float* u; /** Stores horizontally aligned velocity components */
