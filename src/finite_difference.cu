@@ -1,5 +1,6 @@
-#include "finite_difference.cuh"
 #include <stdio.h>
+
+#include "fsim/finite_difference.cuh"
 
 #define CLAMP(x, l, h) ((x) <= (l) ? (l) : ((x) > (h) ? (h)))
 
@@ -66,6 +67,7 @@ __global__ void thread_update_u(const float *u,
   const int eijd = elem(i, j > 1 ? (j - 1) : dim_y - 1, dim_x);
   const int eiju = elem(i, j < dim_y ? (j + 1) : 0, dim_x);
 
+  //   printf("running %d, %d\n", i, j);
   const double kp = -(pr[eiuj] - pr[eidj]) / (2 * dx * density) * MULTIPLIER;
   const double kx2 = (u[eiuj] - 2 * u[eij] + u[eidj]) / (dx * dx) * MULTIPLIER;
   const double ky2 = (u[eiju] - 2 * u[eij] + u[eijd]) / (dy * dy) * MULTIPLIER;
@@ -79,6 +81,7 @@ __global__ void thread_update_u(const float *u,
     da = max(-1e-5, da);
 #endif
 
+    // printf("temp: %lf, da: %lf\n", u[eij], da);
     temp[eij] = u[eij] + da;
 }
 

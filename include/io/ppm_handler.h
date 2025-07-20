@@ -13,10 +13,10 @@ class ppm_handler
   unsigned int width_ = 0;
   unsigned int height_ = 0;
   const unsigned maxval = MAX_PIXEL_VAL;
-  float multiplier_;
+  // float multiplier_;
 
  public:
-  ppm_handler(unsigned int width, unsigned int height, float multiplier);
+  ppm_handler(unsigned int width, unsigned int height);
   ~ppm_handler();
 
   unsigned int &width() { return width_; }

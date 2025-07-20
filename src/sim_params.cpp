@@ -1,4 +1,5 @@
-#include "sim_params.h"
+#include "fsim/sim_params.h"
+
 #include <fstream>
 #include <iostream>
 #include <sstream>

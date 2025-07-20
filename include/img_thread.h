@@ -27,12 +27,18 @@ private:
   pthread_cond_t *write_image_;
 
 public:
-  ImageWriteThread(uint32_t width, uint32_t height, float multiplier, int index,
-                   const char *annotation, int element_count, float *dev_data,
-                   float *host_buffer, pthread_cond_t *cond_image_write,
-                   pthread_cond_t *enable, bool *thread_running);
+ ImageWriteThread(uint32_t width,
+                  uint32_t height,
+                  int index,
+                  const char *annotation,
+                  int element_count,
+                  float *dev_data,
+                  float *host_buffer,
+                  pthread_cond_t *cond_image_write,
+                  pthread_cond_t *enable,
+                  bool *thread_running);
 
-  void ImageWriteThreadRun();
+ void ImageWriteThreadRun();
 };
 
 void run_ppm_thread();

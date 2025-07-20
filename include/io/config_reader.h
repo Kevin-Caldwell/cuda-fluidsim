@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "errors.h"
-#include "sim_params.h"
+#include "fsim/sim_params.h"
 
 namespace config_reader
 {

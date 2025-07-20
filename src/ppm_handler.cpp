@@ -6,8 +6,8 @@
 
 char whitespace = ' ';
 
-ppm_handler::ppm_handler(unsigned int width, unsigned int height, float mul)
-    : height_(height), width_(width), multiplier_(mul)
+ppm_handler::ppm_handler(unsigned int width, unsigned int height)
+    : height_(height), width_(width)
 {
 }
 

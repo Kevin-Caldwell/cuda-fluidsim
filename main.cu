@@ -1,11 +1,11 @@
 // #define VERBOSE
 #include <stdio.h>
 
-#include <cuda_runtime.h>
-#include <helper_cuda.h>
+// #include <cuda_runtime.h>
+// #include <helper_cuda.h>
 // #include <thread>
-#include <random>
-#include <unistd.h>
+// #include <random>
+// #include <unistd.h>
 // #include <limits.h>
 
 #include "fsim/fsim_manager.cuh"
@@ -14,8 +14,8 @@
 // #include "include/ppm_handler.h"
 #include "img_thread.h"
 #include "io/log.h"
-#include "io/ppm_handler.h"
-#include "utils/array_utils.h"
+// #include "io/ppm_handler.h"
+// #include "utils/array_utils.h"
 #include "utils/device_utils.h"
 #include "utils/devptr.h"
 
@@ -26,6 +26,16 @@ char wbuf[40];
 
 #define DEBUG
 
+void print_field(float *h_buffer, int dim_x, int dim_y)
+{
+  for (int i = 0; i < dim_y; i++) {
+    for (int j = 0; j < dim_x; j++) {
+      printf("%f, ", h_buffer[elem(i, j, dim_x)]);
+    }
+    printf("\n");
+  }
+}
+
 void velocity_field_init(int elem_count, int buffer_size, int dim_x, int dim_y,
                          float *h_buffer, SimParams *params, float *d_u,
                          float *d_v, float *d_pressure) {
@@ -33,11 +43,14 @@ void velocity_field_init(int elem_count, int buffer_size, int dim_x, int dim_y,
     h_buffer[i] = params->offset_vel_x;
   }
 
-  // h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] =
-  // 1;
-  for (int i = 0; i < dim_x; i++) {
-    h_buffer[elem(i, dim_y / 2, dim_x)] = 1.0;
-  }
+  h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] = 1.0;
+
+  // // 1;
+  // for (int i = 0; i < dim_x; i++) {
+  //   h_buffer[elem(i, dim_y / 2, dim_x)] = 1.0;
+  // }
+
+  // print_field(h_buffer, dim_x, dim_y);
 
   cudaMemcpy(d_u, h_buffer, buffer_size, cudaMemcpyHostToDevice);
 
@@ -87,7 +100,7 @@ int main(void) {
 
   d_pressure = dev_pressure.get();
   d_u = dev_u.get();
-  d_v = dev_u.get();
+  d_v = dev_v.get();
 
   // Allocate Fields for holding Intermediate Values
   ptr<float> dev_temp0(elem_count, DEV_PTR);
@@ -111,7 +124,7 @@ int main(void) {
   bool save_arena = true;
   unsigned int iterations = 0;
 
-  ppm_handler img_creater = ppm_handler(params.dim_x, params.dim_y, 0);
+  ppm_handler img_creater = ppm_handler(params.dim_x, params.dim_y);
 
   time = utils::log::tock();
   printf("Setup Time: %ld ms\n", time / 1000000);
@@ -161,6 +174,15 @@ int main(void) {
                             elem_count,
                             d_ptr[i],
                             h_buffer);
+
+        if (i == 0) {
+          cudaMemcpy(h_buffer,
+                     d_u,
+                     sizeof(float) * elem_count,
+                     cudaMemcpyDeviceToHost);
+          // printf("\n");
+          // print_field(h_buffer, params.dim_x, params.dim_y);
+        }
       }
 
       // #ifdef LOG_STEP_TIME
@@ -201,6 +223,7 @@ int main(void) {
     std::cout << "\nDEV_U: " << dev_u << ", TEMP0: " << dev_temp0 << std::endl;
 #endif
 
+    // cudaMemcpy(d_v, )
     dev_v.copy_data(&dev_temp1);
 
 #ifdef VERBOSE
