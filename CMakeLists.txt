@@ -1,15 +1,13 @@
-cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25)
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -ccbin clang-14")
 project(cuda_fluidsim LANGUAGES CXX CUDA)
 
-find_package(CUDA REQUIRED)
-include_directories("${CUDA_INCLUDE_DIRS}")
+# include_directories("${CUDA_INCLUDE_DIRS}")
 include(CheckLanguage)
+
+find_package(CUDA REQUIRED)
 check_language(CUDA)
 enable_language(CUDA)
-
-# add_subdirectory(src)
-# add_subdirectory(tests)
-
 
 if(NOT DEFINED CMAKE_CUDA_STANDARD)
   set(CMAKE_CUDA_STANDARD 11)
@@ -25,11 +23,8 @@ add_executable(ppm_handler ppm_main.cpp)
 target_link_libraries(cuda_fluidsim fsim)
 target_link_libraries(ppm_handler fsim)
 
-# add_compile_options(-allow-unsupported-compiler)
-
 set_property(TARGET cuda_fluidsim
              PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-
 
 include_directories(
   "${PROJECT_SOURCE_DIR}/include/Common"
