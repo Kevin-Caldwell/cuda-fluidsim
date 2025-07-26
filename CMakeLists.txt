@@ -36,12 +36,6 @@ include_directories(
   "${PROJECT_SOURCE_DIR}/include/"
 )
 
-if(APPLE)
-  set_property( TARGET cuda_fluidsim
-               PROPERTY
-               BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
-endif()
-
 # Google Tests
 enable_testing()
 include(FetchContent)
