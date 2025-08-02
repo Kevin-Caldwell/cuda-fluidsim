@@ -8,17 +8,6 @@
 namespace backup
 {
 
-// constexpr int max_file_length = 255;
-
-// const char metadata_location[] = "data/backups/.metadata";
-// const char backup_folder_location[] = "data/backups";
-// const char return_folder[] = "../../../";
-// const bool reset_count = false;
-
-// extern char backup_location[];
-
-// extern int backup_count;
-
 constexpr int max_file_length = 255;
 
 class Backup
