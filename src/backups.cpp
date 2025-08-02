@@ -5,10 +5,14 @@
 
 #include <string>
 
-char backup::backup_location[backup::max_file_length];
-int backup::backup_count = 0;
+namespace backup
+{
 
-ret_t backup::setup_backup() {
+char backup_location[max_file_length];
+int backup_count = 0;
+
+ret_t setup_backup()
+{
   /** OPEN METADATA FILE */
   int res = RES_OK;
   FILE *metadata_fp = fopen(metadata_location, "r+");
@@ -46,15 +50,22 @@ ret_t backup::setup_backup() {
   return RES_OK;
 }
 
-ret_t backup::exit_backup(SimParams *p) {
+ret_t exit_backup(SimParams *p)
+{
   write_parameters_to_file("backup.config", p);
   chdir(return_folder);
   return RES_OK;
 }
 
-backup::Backup::Backup() {
+Backup::Backup(bool reset_count, SimParams *params)
+    : reset_count_(reset_count), params_(params)
+{
   // Open Metadata file
   int res = RES_OK;
+  char cwd[100];
+
+  getcwd(cwd, 100);
+  printf("Current working drectory: %s", cwd);
   FILE *metadata_fp = fopen(metadata_location, "r+");
   if (metadata_fp == NULL) {
     perror("Backups Folder not setup correctly\n");
@@ -86,3 +97,11 @@ backup::Backup::Backup() {
   // Move into backup location
   chdir(backup_location);
 }
+
+Backup::~Backup()
+{
+  write_parameters_to_file("backup.config", params_);
+  chdir(return_folder);
+}
+
+}  // namespace backup

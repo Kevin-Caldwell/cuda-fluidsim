@@ -1,12 +1,14 @@
 #pragma once
 
+#include <limits>
+
 #include "errors.h"
 #include "fsim/sim_params.h"
 
 namespace backup
 {
 
-constexpr int max_file_length = 100;
+constexpr int max_file_length = 255;
 
 const char metadata_location[] = "data/backups/.metadata";
 const char backup_folder_location[] = "data/backups";
@@ -20,12 +22,14 @@ extern int backup_count;
 class Backup
 {
  public:
-  Backup();
+  Backup(const bool reset_count, SimParams *params);
   ~Backup();
 
  private:
+  bool reset_count_;
   char backup_location_[max_file_length];
   int backup_count_;
+  SimParams *params_;
 };
 
 ret_t setup_backup();

@@ -114,7 +114,8 @@ int main(void) {
 
   printf("Successfully Allocated Memory...\n");
 
-  backup::setup_backup();
+  // backup::setup_backup();
+  backup::Backup b(false, &params);
 
   velocity_field_init(elem_count, buffer_size, params.dim_x, params.dim_y,
                       h_buffer, &params, d_u, d_v, d_pressure);
@@ -243,6 +244,5 @@ int main(void) {
   system("./../../../vidgen.sh");
   system("rm -r temp");
 
-  backup::exit_backup(&params);
   return 0;
 }
