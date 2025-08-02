@@ -35,8 +35,6 @@ Backup::Backup(bool reset_count, SimParams *params)
     backup_count_ = 0;
   }
 
-  printf("%d Backup Count\n", backup_count_);
-
   // Write Backup count
   fseek(metadata_fp, 0, 0);
   fwrite(&backup_count_, sizeof(backup_count_), 1, metadata_fp);

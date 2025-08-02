@@ -45,6 +45,10 @@ void velocity_field_init(int elem_count, int buffer_size, int dim_x, int dim_y,
 
   h_buffer[elem(dim_x / 2, dim_y / 2, dim_x)] = 1.0;
 
+  for (int i = 0; i < dim_y / 2; ++i) {
+    h_buffer[elem(dim_x / 2, dim_x / 4 + i, dim_x)] = 1.0;
+  }
+
   // // 1;
   // for (int i = 0; i < dim_x; i++) {
   //   h_buffer[elem(i, dim_y / 2, dim_x)] = 1.0;
